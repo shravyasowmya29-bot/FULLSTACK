@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lodge Grievance - Presidency University</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4 mb-4">
+  <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">🏛️ Presidency University — Campus Portal</a>
+  <div>
+    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-light">Back to Dashboard</a>
+  </div>
+</nav>
+
+<div class="container py-4" style="max-width: 650px;">
+  <div class="card p-4 shadow-sm border-0">
+    <h4 class="fw-bold mb-1">Lodge Campus Grievance</h4>
+    <p class="text-muted small mb-4">Report lab hardware issues, facility breakdowns, or classroom faults.</p>
+
+    <form method="post" action="{% url 'submit' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Issue Title / Room Code</label>
+        <input 
+          type="text" 
+          name="title" 
+          class="form-control" 
+          placeholder="e.g. L-Block LB02: System 14 LAN cable faulty" 
+          required
+        >
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Category</label>
+          <select name="category" class="form-select" required>
+            <option value="Lab/Hardware" selected>Lab/Hardware</option>
+            <option value="Hostel/Facilities">Hostel/Facilities</option>
+            <option value="Academic">Academic</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Priority</label>
+          <select name="priority" class="form-select" required>
+            <option value="Low">Low</option>
+            <option value="Medium" selected>Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Detailed Description</label>
+        <textarea 
+          name="description" 
+          rows="4" 
+          class="form-control" 
+          placeholder="Provide specific details (e.g. system node number, block floor, time of failure)..." 
+          required
+        ></textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">Attachment (Optional)</label>
+        <input type="file" name="attachment" class="form-control" accept="image/*">
+        <div class="form-text">Attach an image or photo proof if applicable.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Submit Grievance</button>
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
