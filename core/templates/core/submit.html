@@ -28,7 +28,7 @@
           type="text" 
           name="title" 
           class="form-control" 
-          placeholder="e.g. L-Block LB02: System 14 LAN cable faulty" 
+          placeholder="e.g. L-Block LB02: System 14 network card failure" 
           required
         >
       </div>
@@ -60,15 +60,22 @@
           name="description" 
           rows="4" 
           class="form-control" 
-          placeholder="Provide specific details (e.g. system node number, block floor, time of failure)..." 
+          placeholder="Describe the defect, system number, or location details..." 
           required
         ></textarea>
       </div>
 
+      <!-- Native Camera / File Attachment -->
       <div class="mb-4">
-        <label class="form-label fw-semibold">Attachment (Optional)</label>
-        <input type="file" name="attachment" class="form-control" accept="image/*">
-        <div class="form-text">Attach an image or photo proof if applicable.</div>
+        <label class="form-label fw-semibold">Photo Proof (Camera / Gallery)</label>
+        <input 
+          type="file" 
+          name="attachment" 
+          class="form-control" 
+          accept="image/*" 
+          capture="environment"
+        >
+        <div class="form-text">On mobile devices, this directly opens the camera to snap photo evidence.</div>
       </div>
 
       <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Submit Grievance</button>

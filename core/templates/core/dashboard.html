@@ -4,132 +4,222 @@
   <meta charset="UTF-8">
   <title>Presidency University - Grievance Portal</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    body {
+      background-color: #f8f9fa;
+    }
+
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
     @media print {
+      body {
+        background-color: #ffffff !important;
+        font-size: 10pt;
+        color: #000;
+      }
       .no-print {
         display: none !important;
       }
+      .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
       .card {
-        border: 1px solid #ccc !important;
+        border: 1px solid #dee2e6 !important;
         box-shadow: none !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .table {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      .table th, .table td {
+        padding: 6px 8px !important;
+        font-size: 9pt !important;
+        vertical-align: middle !important;
+        word-wrap: break-word;
+      }
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .navbar {
+        padding: 8px 14px !important;
+        margin-bottom: 12px !important;
+        background-color: #212529 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .badge {
+        border: 1px solid #bbb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #chartWrapper {
+        max-width: 250px !important;
+        margin: 0 auto;
       }
     }
   </style>
 </head>
-<body class="bg-light">
+<body>
 
-<!-- Navigation Bar -->
+<!-- Navbar -->
 <nav class="navbar navbar-dark bg-dark px-4 mb-4">
-  <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">🏛️ Presidency University — Campus Infrastructure Portal</a>
-  <div class="d-flex align-items-center">
-    <span class="text-white me-3">
-      User: <strong>{{ request.user.username }}</strong>
+  <div class="container-fluid px-0 d-flex justify-content-between align-items-center">
+    <a class="navbar-brand fw-bold mb-0" href="{% url 'dashboard' %}">🏛️ Presidency University — Campus Infrastructure Portal</a>
+    <div class="d-flex align-items-center">
+
       {% if request.user.is_staff or request.user.is_superuser %}
-        <span class="badge bg-warning text-dark">Staff Admin</span>
-      {% else %}
-        <span class="badge bg-info text-dark">Student</span>
+        <!-- Admin Notification Dropdown -->
+        <div class="dropdown me-3 no-print">
+          <button class="btn btn-outline-warning btn-sm dropdown-toggle position-relative" type="button" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            🔔 Alerts
+            {% if pending > 0 %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ pending }}
+              </span>
+            {% endif %}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notifDropdown" style="min-width: 290px;">
+            <li class="dropdown-header fw-bold">Pending Campus Tickets</li>
+            {% for p in recent_pending %}
+              <li>
+                <a class="dropdown-item small py-2 border-bottom" href="#activeSection">
+                  <span class="badge bg-danger">{{ p.priority }}</span> <strong>#{{ p.id }}</strong> {{ p.title|truncatechars:26 }}
+                </a>
+              </li>
+            {% empty %}
+              <li><span class="dropdown-item text-muted small">No pending tickets right now!</span></li>
+            {% endfor %}
+          </ul>
+        </div>
       {% endif %}
-    </span>
-    <button onclick="window.print()" class="btn btn-sm btn-outline-light me-2 no-print">🖨️ Export Report</button>
-    <form method="post" action="{% url 'logout' %}" class="d-inline no-print">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
-    </form>
+
+      <span class="text-white me-3">
+        User: <strong>{{ request.user.username }}</strong>
+        {% if request.user.is_staff or request.user.is_superuser %}
+          <span class="badge bg-warning text-dark">Staff Admin</span>
+        {% else %}
+          <span class="badge bg-info text-dark">Student</span>
+        {% endif %}
+      </span>
+
+      <button onclick="window.print()" class="btn btn-sm btn-outline-light me-2 no-print">🖨️ Export PDF / Print</button>
+      <form method="post" action="{% url 'logout' %}" class="d-inline no-print">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+      </form>
+    </div>
   </div>
 </nav>
 
 <div class="container pb-5">
   <!-- Metrics Counters -->
   <div class="row g-3 mb-4">
-    <div class="col-md-3">
+    <div class="col-3">
       <div class="card p-3 shadow-sm border-0 text-center">
-        <h6 class="text-muted">Total Issues</h6>
-        <h2 class="fw-bold">{{ total }}</h2>
+        <h6 class="text-muted mb-1">Total Issues</h6>
+        <h3 class="fw-bold mb-0">{{ total }}</h3>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-3">
       <div class="card p-3 shadow-sm border-0 text-center">
-        <h6 class="text-muted">Pending</h6>
-        <h2 class="fw-bold text-warning">{{ pending }}</h2>
+        <h6 class="text-muted mb-1">Pending</h6>
+        <h3 class="fw-bold text-warning mb-0">{{ pending }}</h3>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-3">
       <div class="card p-3 shadow-sm border-0 text-center">
-        <h6 class="text-muted">In Progress</h6>
-        <h2 class="fw-bold text-primary">{{ in_progress }}</h2>
+        <h6 class="text-muted mb-1">In Progress</h6>
+        <h3 class="fw-bold text-primary mb-0">{{ in_progress }}</h3>
       </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-3">
       <div class="card p-3 shadow-sm border-0 text-center">
-        <h6 class="text-muted">Resolved</h6>
-        <h2 class="fw-bold text-success">{{ resolved }}</h2>
+        <h6 class="text-muted mb-1">Resolved</h6>
+        <h3 class="fw-bold text-success mb-0">{{ resolved }}</h3>
       </div>
     </div>
   </div>
 
-  <!-- Analytics and Quick Submission -->
+  <!-- Analytics & Registration Area -->
   <div class="row g-4 mb-4">
-    <div class="col-md-5">
-      <div class="card p-3 shadow-sm border-0 h-100">
-        <h5 class="fw-bold mb-3">Resolution Metrics</h5>
-        <canvas id="statusChart" height="200"></canvas>
+    <div class="{% if request.user.is_staff or request.user.is_superuser %}col-md-6 mx-auto{% else %}col-md-5{% endif %}">
+      <div class="card p-3 shadow-sm border-0 h-100 text-center">
+        <h6 class="fw-bold mb-2">Campus Resolution Ratio</h6>
+        <div id="chartWrapper" style="max-height: 200px; display: flex; justify-content: center;">
+          <canvas id="statusChart"></canvas>
+        </div>
       </div>
     </div>
+
+    <!-- Lodging card shown strictly to students -->
+    {% if not request.user.is_staff and not request.user.is_superuser %}
     <div class="col-md-7">
       <div class="card p-4 shadow-sm border-0 h-100 d-flex flex-column justify-content-between">
         <div>
           <h5 class="fw-bold">Fast Issue Registration</h5>
-          <p class="text-muted">Lodge lab faults, classroom electronics, hostel queries, or department maintenance issues across D-Block and L-Block.</p>
+          <p class="text-muted">Lodge lab hardware defects, classroom electronics, hostel queries, or department maintenance issues across D-Block and L-Block.</p>
         </div>
         <a href="{% url 'submit' %}" class="btn btn-primary btn-lg w-100 no-print">+ Lodge New Grievance</a>
       </div>
     </div>
+    {% endif %}
   </div>
 
-  <!-- Issues Data Table with Filter Tabs -->
-  <div class="card p-3 shadow-sm border-0">
+  <!-- Section 1: Active Tickets Queue -->
+  <div class="card p-3 shadow-sm border-0 mb-4" id="activeSection">
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-      <h5 class="fw-bold mb-0">
-        {% if request.user.is_staff or request.user.is_superuser %}
-          Campus-Wide Records (All Issues)
-        {% else %}
-          My Lodged Grievances
-        {% endif %}
-      </h5>
+      <h5 class="fw-bold mb-0 text-primary">⚡ Active Action Queue (Pending & In Progress)</h5>
+      <span class="badge bg-primary fs-6">{{ active_grievances.count }} Active</span>
+    </div>
 
-      <!-- Filter Tabs -->
-      <div class="btn-group btn-group-sm no-print" role="group" id="filterBtnGroup">
-        <button type="button" class="btn btn-outline-secondary active" onclick="filterTable(event, 'all')">All ({{ total }})</button>
-        <button type="button" class="btn btn-outline-warning text-dark" onclick="filterTable(event, 'Pending')">Pending ({{ pending }})</button>
-        <button type="button" class="btn btn-outline-primary" onclick="filterTable(event, 'In Progress')">In Progress ({{ in_progress }})</button>
-        <button type="button" class="btn btn-outline-success" onclick="filterTable(event, 'Resolved')">Resolved ({{ resolved }})</button>
-      </div>
+    <!-- Live Search Filter -->
+    <div class="mb-3 no-print">
+      <input 
+        type="text" 
+        id="tableSearch" 
+        class="form-control form-control-sm" 
+        placeholder="🔍 Live filter by block, lab code, or title (e.g. L-Block, LB02, Projector)..." 
+        onkeyup="searchActiveTable()"
+      >
     </div>
 
     <div class="table-responsive">
-      <table class="table table-hover align-middle" id="grievanceTable">
+      <table class="table table-hover align-middle" id="activeTable">
         <thead class="table-light">
           <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Date & Time</th>
+            <th style="width: 7%;">ID</th>
+            <th style="width: 33%;">Title & Description</th>
+            <th style="width: 14%;">Category</th>
+            <th style="width: 10%;">Priority</th>
+            <th style="width: 11%;">Status</th>
+            <th style="width: 15%;">Logged Date & Time</th>
             {% if request.user.is_staff or request.user.is_superuser %}
-            <th class="no-print">Admin Action</th>
+              <th style="width: 10%;" class="no-print">Admin Action</th>
             {% endif %}
           </tr>
         </thead>
         <tbody>
-          {% for g in grievances %}
-          <tr data-status="{{ g.status }}">
+          {% for g in active_grievances %}
+          <tr>
             <td>#{{ g.id }}</td>
             <td class="fw-semibold">
               {{ g.title }}
+              {% if g.description %}
+                <div class="small text-muted fw-normal">{{ g.description|truncatechars:65 }}</div>
+              {% endif %}
               {% if g.attachment %}
-                <a href="{{ g.attachment.url }}" target="_blank" class="badge bg-light text-primary border text-decoration-none ms-1">📷 Attachment</a>
+                <a href="{{ g.attachment.url }}" target="_blank" class="badge bg-light text-primary border text-decoration-none mt-1 d-inline-block">📷 View Photo</a>
               {% endif %}
             </td>
             <td><span class="badge bg-secondary">{{ g.category }}</span></td>
@@ -139,7 +229,7 @@
               </span>
             </td>
             <td>
-              <span class="badge {% if g.status == 'Resolved' %}bg-success{% elif g.status == 'In Progress' %}bg-primary{% else %}bg-secondary{% endif %}">
+              <span class="badge {% if g.status == 'In Progress' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
                 {{ g.status }}
               </span>
             </td>
@@ -148,14 +238,63 @@
             <td class="no-print">
               <div class="btn-group btn-group-sm">
                 <a href="{% url 'update_status' g.id 'In Progress' %}" class="btn btn-outline-primary">Start</a>
-                <a href="{% url 'update_status' g.id 'Resolved' %}" class="btn btn-outline-success">Resolve</a>
+                <a href="{% url 'update_status' g.id 'Resolved' %}" class="btn btn-success text-white">Resolve</a>
               </div>
             </td>
             {% endif %}
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="text-center text-muted py-4">No issues filed yet.</td>
+            <td colspan="{% if request.user.is_staff or request.user.is_superuser %}7{% else %}6{% endif %}" class="text-center text-muted py-4">No active grievances pending resolution.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 2: Dedicated Resolved Records Archive -->
+  <div class="card p-3 shadow-sm border-0">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0 text-success">✅ Resolved Records History</h5>
+      <span class="badge bg-success fs-6">{{ resolved }} Completed</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle table-sm" id="resolvedTable">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 7%;">ID</th>
+            <th style="width: 38%;">Title & Details</th>
+            <th style="width: 14%;">Category</th>
+            <th style="width: 10%;">Priority</th>
+            <th style="width: 11%;">Status</th>
+            <th style="width: 12%;">Logged Time</th>
+            <th style="width: 8%;">Proof</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in resolved_grievances %}
+          <tr>
+            <td>#{{ g.id }}</td>
+            <td>
+              <span class="text-muted text-decoration-line-through">{{ g.title }}</span>
+            </td>
+            <td><span class="badge bg-light text-dark border">{{ g.category }}</span></td>
+            <td><span class="badge bg-secondary">{{ g.priority }}</span></td>
+            <td><span class="badge bg-success">Resolved</span></td>
+            <td class="small text-muted">{{ g.created_at|date:"M d, Y h:i A" }}</td>
+            <td>
+              {% if g.attachment %}
+                <a href="{{ g.attachment.url }}" target="_blank" class="badge bg-light text-success border text-decoration-none">📷 Proof</a>
+              {% else %}
+                <span class="text-muted small">None</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">No resolved records in the archive yet.</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -164,9 +303,8 @@
   </div>
 </div>
 
-<!-- Interactive Chart & Table Filter Scripts -->
 <script>
-  // Doughnut Chart Initialization
+  // Doughnut Chart Setup
   const ctx = document.getElementById('statusChart').getContext('2d');
   new Chart(ctx, {
     type: 'doughnut',
@@ -179,26 +317,20 @@
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom' }
       }
     }
   });
 
-  // Client-side Table Filter Function
-  function filterTable(event, status) {
-    const rows = document.querySelectorAll('#grievanceTable tbody tr[data-status]');
-    const buttons = document.querySelectorAll('#filterBtnGroup button');
-
-    buttons.forEach(btn => btn.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
+  // Client-side Instant Search
+  function searchActiveTable() {
+    const query = document.getElementById('tableSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#activeTable tbody tr');
     rows.forEach(row => {
-      if (status === 'all' || row.getAttribute('data-status') === status) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(query) ? '' : 'none';
     });
   }
 </script>

@@ -17,23 +17,33 @@ def register(request):
 
 @login_required
 def dashboard(request):
-    # Admins/Staff see all issues; regular students only see their own lodged tickets
+    # Role-Based Base Query
     if request.user.is_staff or request.user.is_superuser:
-        grievances = Grievance.objects.all().order_by('-created_at')
+        base_qs = Grievance.objects.all().order_by('-created_at')
     else:
-        grievances = Grievance.objects.filter(student=request.user).order_by('-created_at')
+        base_qs = Grievance.objects.filter(student=request.user).order_by('-created_at')
+
+    # Separate Active Queue from Resolved Archive
+    active_grievances = base_qs.exclude(status='Resolved')
+    resolved_grievances = base_qs.filter(status='Resolved')
 
     context = {
-        'grievances': grievances,
-        'total': grievances.count(),
-        'pending': grievances.filter(status='Pending').count(),
-        'in_progress': grievances.filter(status='In Progress').count(),
-        'resolved': grievances.filter(status='Resolved').count(),
+        'active_grievances': active_grievances,
+        'resolved_grievances': resolved_grievances,
+        'total': base_qs.count(),
+        'pending': base_qs.filter(status='Pending').count(),
+        'in_progress': base_qs.filter(status='In Progress').count(),
+        'resolved': resolved_grievances.count(),
+        'recent_pending': base_qs.filter(status='Pending')[:5],
     }
     return render(request, 'core/dashboard.html', context)
 
 @login_required
 def submit_grievance(request):
+    # Admin cannot lodge issues - redirect to dashboard if admin tries to access
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('dashboard')
+
     if request.method == 'POST':
         title = request.POST.get('title')
         category = request.POST.get('category')
